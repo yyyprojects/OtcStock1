@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>An Interactive Guide to OTC Stocks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals & Muted Tones -->
+    <!-- Application Structure Plan: A thematic, single-page scrolling experience designed to guide a novice user progressively. It starts with a simple "What is it?" analogy, moves to a core interactive comparison of OTC vs. Exchanges, then allows exploration of the OTC tiers via a dashboard, explains company motivations, visualizes investor risks/rewards, clarifies regulation with a diagram, and concludes with key takeaways. This user-centric flow prioritizes understanding and engagement over mirroring the report's linear structure. -->
+    <!-- Visualization & Content Choices: 1. OTC vs. Exchange (Table 1) -> Goal: Compare -> Method: Interactive side-by-side layout with clickable elements -> Justification: More engaging than a static table, encourages discovery -> Library: Vanilla JS/Tailwind. 2. OTC Tiers (Table 2) -> Goal: Organize/Compare -> Method: Interactive cards with a comparative bar chart -> Justification: Transforms data into an exploratory tool with a quick visual summary -> Library: Chart.js, JS/Tailwind. 3. Investor Risks -> Goal: Compare/Inform -> Method: Dynamic radar chart comparing OTC vs. Exchange stocks -> Justification: Provides an immediate, multi-faceted visual contrast of risk profiles -> Library: Chart.js. 4. Regulation -> Goal: Organize -> Method: HTML/CSS diagram with hover tooltips -> Justification: Simplifies complex relationships visually -> Library: JS/Tailwind. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDF8F0;
+            color: #333333;
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #E27D60;
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover::after, .nav-link.active::after {
+            width: 100%;
+        }
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .tier-button {
+            transition: all 0.3s ease;
+        }
+        .tier-button.active {
+            background-color: #E27D60 !important;
+            color: #FFFFFF !important;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-[#E27D60]">OTC Stocks Explained</h1>
+            <div class="hidden md:flex space-x-8">
+                <a href="#intro" class="nav-link text-gray-600 hover:text-[#E27D60] font-medium">Introduction</a>
+                <a href="#compare" class="nav-link text-gray-600 hover:text-[#E27D60] font-medium">Compare</a>
+                <a href="#tiers" class="nav-link text-gray-600 hover:text-[#E27D60] font-medium">The Tiers</a>
+                <a href="#investor" class="nav-link text-gray-600 hover:text-[#E27D60] font-medium">For Investors</a>
+                <a href="#regulation" class="nav-link text-gray-600 hover:text-[#E27D60] font-medium">Regulation</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="intro" class="py-20 md:py-32">
+            <div class="container mx-auto px-6 text-center">
+                <h2 class="text-4xl md:text-5xl font-bold mb-4">What is an OTC Stock?</h2>
+                <p class="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto">
+                    This guide provides an interactive way to understand Over-the-Counter (OTC) stocks. Think of it like this: major stock exchanges (like the NYSE) are like big, formal department stores with strict rules for the products they sell. OTC markets are more like a massive, decentralized network of specialty shops and markets, each with different standards. This application will help you navigate this world, from its structure to the risks and rewards involved.
+                </p>
+            </div>
+        </section>
+
+        <section id="compare" class="py-20 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-2">Two Worlds of Trading</h2>
+                    <p class="text-lg text-gray-600 max-w-3xl mx-auto">The biggest difference between OTC and regular stocks is *where* and *how* they are traded. This section provides a side-by-side comparison of these two distinct market structures. Explore the key features to understand the fundamental differences in how they operate, which directly impacts transparency, cost, and risk.</p>
+                </div>
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                        <h3 class="text-2xl font-bold mb-4 text-center text-[#85DCB]">National Exchanges (e.g., NYSE, Nasdaq)</h3>
+                        <ul id="exchange-features" class="space-y-3"></ul>
+                    </div>
+                    <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                        <h3 class="text-2xl font-bold mb-4 text-center text-[#E27D60]">OTC Markets</h3>
+                        <ul id="otc-features" class="space-y-3"></ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tiers" class="py-20">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-2">Exploring the OTC Universe</h2>
+                    <p class="text-lg text-gray-600 max-w-3xl mx-auto">Not all OTC stocks are the same. The OTC Markets Group organizes companies into three main tiers based on the quality and frequency of their financial reporting. This creates a spectrum of risk and transparency. Use the buttons below to explore each tier and see how they compare on key metrics.</p>
+                </div>
+                <div class="flex justify-center mb-8 space-x-2 md:space-x-4">
+                    <button id="btn-otcqx" class="tier-button text-sm md:text-base bg-white px-4 py-2 rounded-full font-semibold shadow-sm border border-gray-300 hover:bg-gray-100">OTCQX</button>
+                    <button id="btn-otcqb" class="tier-button text-sm md:text-base bg-white px-4 py-2 rounded-full font-semibold shadow-sm border border-gray-300 hover:bg-gray-100">OTCQB</button>
+                    <button id="btn-pink" class="tier-button text-sm md:text-base bg-white px-4 py-2 rounded-full font-semibold shadow-sm border border-gray-300 hover:bg-gray-100">OTC Pink</button>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8 items-center">
+                    <div id="tier-details" class="bg-white p-8 rounded-lg shadow-md">
+                    </div>
+                    <div class="chart-container h-64 md:h-96">
+                        <canvas id="tiersChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="investor" class="py-20 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-2">An Investor's Guide: Risks vs. Rewards</h2>
+                    <p class="text-lg text-gray-600 max-w-3xl mx-auto">Investing in OTC stocks involves a unique trade-off. The potential for high growth comes with increased risks related to transparency and liquidity. The chart below visualizes this dynamic, comparing a typical OTC stock against an exchange-listed one across key factors. This section also outlines crucial strategies for navigating this market safely.</p>
+                </div>
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div class="chart-container h-80 md:h-[450px]">
+                        <canvas id="riskRewardChart"></canvas>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold mb-4">Key Strategies for Investors</h3>
+                        <div class="space-y-4">
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-bold text-lg">⚠️ Lack of Information</h4>
+                                <p class="text-gray-600">The biggest risk. Many OTC companies don't file reports with the SEC. You must do extra research to verify the company's health.</p>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-bold text-lg">🌊 Low Liquidity & High Volatility</h4>
+                                <p class="text-gray-600">Fewer buyers and sellers mean it can be hard to sell your shares, and prices can swing dramatically.</p>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-bold text-lg">💡 Use Limit Orders</h4>
+                                <p class="text-gray-600">To protect against volatility, use limit orders to specify the exact price at which you're willing to buy or sell. This prevents unpleasant surprises.</p>
+                            </div>
+                             <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-bold text-lg">🌱 High Growth Potential</h4>
+                                <p class="text-gray-600">The reward: You can invest in small, emerging companies before they become widely known, offering the potential for significant returns.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="regulation" class="py-20">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-2">Who's in Charge Here?</h2>
+                    <p class="text-lg text-gray-600 max-w-3xl mx-auto">While the OTC market is "decentralized," it's not the Wild West. A multi-layered system of oversight exists to protect investors and maintain market integrity. This diagram shows the key players and their roles in regulating the brokers and dealers who operate within the OTC ecosystem.</p>
+                </div>
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex flex-col md:flex-row justify-center items-center md:items-start gap-8">
+                        <div class="text-center p-6 bg-white rounded-lg shadow-md w-64">
+                            <h3 class="text-xl font-bold text-[#E27D60] mb-2">SEC</h3>
+                            <p class="text-sm text-gray-600">The U.S. Securities and Exchange Commission sets the rules. A recent rule change (15c2-11) indirectly forces transparency by restricting brokers from quoting prices for companies that don't provide public information.</p>
+                        </div>
+                        <div class="text-2xl text-gray-400 self-center transform md:rotate-0 rotate-90">&rarr;</div>
+                        <div class="text-center p-6 bg-white rounded-lg shadow-md w-64">
+                            <h3 class="text-xl font-bold text-[#E27D60] mb-2">FINRA</h3>
+                            <p class="text-sm text-gray-600">The Financial Industry Regulatory Authority oversees broker-dealers. All brokers trading OTC stocks must be FINRA members and follow rules like "Best Execution" to get a fair price for their clients.</p>
+                        </div>
+                         <div class="text-2xl text-gray-400 self-center transform md:rotate-0 rotate-90">&rarr;</div>
+                        <div class="text-center p-6 bg-white rounded-lg shadow-md w-64">
+                            <h3 class="text-xl font-bold text-[#E27D60] mb-2">OTC Markets Group</h3>
+                            <p class="text-sm text-gray-600">A private company that provides the trading platforms and organizes the market into the tiers (OTCQX, OTCQB, Pink) you explored earlier, creating a market-driven incentive for disclosure.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white border-t mt-20">
+        <div class="container mx-auto px-6 py-8 text-center text-gray-600">
+            <h3 class="text-2xl font-bold mb-4">Key Takeaways</h3>
+            <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto text-left">
+                <div class="bg-gray-50 p-4 rounded-lg"><strong>It's a Different Market:</strong> OTC is a decentralized network, not a centralized exchange. This is the source of its unique characteristics.</div>
+                <div class="bg-gray-50 p-4 rounded-lg"><strong>Tiers Matter:</strong> The OTCQX, OTCQB, and Pink tiers indicate different levels of company disclosure and risk. They are your first guidepost for research.</div>
+                <div class="bg-gray-50 p-4 rounded-lg"><strong>High Risk, High Potential:</strong> OTC stocks offer access to early-stage companies but require extra due diligence, caution, and specific trading strategies like using limit orders.</div>
+            </div>
+            <p class="mt-8 text-sm">This interactive guide is for educational purposes only and is not financial advice.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const comparisonData = {
+                'Market Structure': ['Centralized exchange with a physical or virtual location', 'Decentralized network of dealers and brokers'],
+                'Pricing Mechanism': ['Order-driven; prices determined through auctions', 'Quote-driven; prices are negotiated between parties'],
+                'Transparency': ['High; trades are publicly reported in real-time', 'Lower; trades may not be publicly reported in real-time'],
+                'Regulation': ['Very stringent; high governance standards', 'Less stringent; oversight is often indirect'],
+                'Liquidity': ['Generally higher due to a larger pool of participants', 'Lower and can vary significantly'],
+                'Typical Companies': ['Large, established blue-chip and tech companies', 'Startups, foreign companies (ADRs), and penny stocks']
+            };
+
+            const exchangeFeatures = document.getElementById('exchange-features');
+            const otcFeatures = document.getElementById('otc-features');
+
+            Object.keys(comparisonData).forEach(key => {
+                let liExchange = document.createElement('li');
+                liExchange.className = 'p-3 bg-white rounded-md border';
+                liExchange.innerHTML = `<strong class="text-gray-800">${key}:</strong><br>${comparisonData[key][0]}`;
+                exchangeFeatures.appendChild(liExchange);
+
+                let liOtc = document.createElement('li');
+                liOtc.className = 'p-3 bg-white rounded-md border';
+                liOtc.innerHTML = `<strong class="text-gray-800">${key}:</strong><br>${comparisonData[key][1]}`;
+                otcFeatures.appendChild(liOtc);
+            });
+
+            const tierData = {
+                otcqx: {
+                    name: 'OTCQX (The Best Market)',
+                    description: 'The premier tier for established, investor-focused U.S. and international companies. While not listed on a national exchange, they meet high financial standards, are current in their disclosure, and comply with U.S. securities law.',
+                    requirements: 'Must meet stringent financial standards, have audited annual financials, and cannot be a shell or penny stock company.',
+                    examples: 'Heineken N.V., Roche Holding AG',
+                    risk: 2,
+                    disclosure: 5
+                },
+                otcqb: {
+                    name: 'OTCQB (The Venture Market)',
+                    description: 'For early-stage and developing U.S. and international companies that are not yet able to qualify for OTCQX. They must be current in their reporting and undergo an annual verification and management certification process.',
+                    requirements: 'Must have a minimum bid price of $0.01, provide audited financials, and cannot be in bankruptcy.',
+                    examples: 'Many small-cap and emerging companies in tech and biotech.',
+                    risk: 3,
+                    disclosure: 4
+                },
+                pink: {
+                    name: 'OTC Pink (The Open Market)',
+                    description: 'The most speculative tier with a wide range of companies, including foreign companies that limit their disclosure, penny stocks, shell companies, and distressed or delinquent companies. Information is categorized as Current, Limited, or No Information.',
+                    requirements: 'No minimum financial standards are required.',
+                    examples: 'Nestle S.A., Nissan Motor Co., Ltd. (and many penny stocks)',
+                    risk: 5,
+                    disclosure: 2
+                }
+            };
+
+            const tierDetailsContainer = document.getElementById('tier-details');
+            const tierButtons = {
+                otcqx: document.getElementById('btn-otcqx'),
+                otcqb: document.getElementById('btn-otcqb'),
+                pink: document.getElementById('btn-pink')
+            };
+
+            function updateTierDetails(tier) {
+                const data = tierData[tier];
+                tierDetailsContainer.innerHTML = `
+                    <h3 class="text-2xl font-bold mb-3 text-[#E27D60]">${data.name}</h3>
+                    <p class="mb-4 text-gray-700">${data.description}</p>
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h4 class="font-semibold mb-1">Key Requirements:</h4>
+                        <p class="text-sm text-gray-600 mb-2">${data.requirements}</p>
+                        <h4 class="font-semibold mb-1">Example Companies:</h4>
+                        <p class="text-sm text-gray-600">${data.examples}</p>
+                    </div>
+                `;
+                
+                Object.values(tierButtons).forEach(btn => btn.classList.remove('active'));
+                tierButtons[tier].classList.add('active');
+
+                tiersChart.data.datasets[0].data = [tierData[tier].risk];
+                tiersChart.data.datasets[1].data = [tierData[tier].disclosure];
+                tiersChart.options.plugins.title.text = `${data.name} - Profile`;
+                tiersChart.update();
+            }
+
+            Object.keys(tierButtons).forEach(key => {
+                tierButtons[key].addEventListener('click', () => updateTierDetails(key));
+            });
+
+            const tiersCtx = document.getElementById('tiersChart').getContext('2d');
+            const tiersChart = new Chart(tiersCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Selected Tier Profile'],
+                    datasets: [{
+                        label: 'Relative Risk',
+                        data: [],
+                        backgroundColor: 'rgba(226, 125, 96, 0.6)',
+                        borderColor: 'rgba(226, 125, 96, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Disclosure Level',
+                        data: [],
+                        backgroundColor: 'rgba(133, 220, 187, 0.6)',
+                        borderColor: 'rgba(133, 220, 187, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 5,
+                            title: { display: true, text: 'Scale (1=Low, 5=High)' }
+                        }
+                    },
+                    plugins: {
+                        title: { display: true, text: 'Select a Tier to View Profile', font: { size: 16 } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.x !== null) {
+                                        label += context.parsed.x;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            updateTierDetails('otcqx');
+
+            const riskRewardCtx = document.getElementById('riskRewardChart').getContext('2d');
+            const riskRewardChart = new Chart(riskRewardCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Growth Potential', 'Volatility', 'Liquidity', 'Transparency', 'Regulatory Burden'],
+                    datasets: [{
+                        label: 'Typical OTC Stock',
+                        data: [5, 5, 2, 2, 1],
+                        backgroundColor: 'rgba(226, 125, 96, 0.2)',
+                        borderColor: 'rgba(226, 125, 96, 1)',
+                        pointBackgroundColor: 'rgba(226, 125, 96, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(226, 125, 96, 1)'
+                    }, {
+                        label: 'Typical Exchange Stock',
+                        data: [3, 3, 5, 5, 4],
+                        backgroundColor: 'rgba(133, 220, 187, 0.2)',
+                        borderColor: 'rgba(133, 220, 187, 1)',
+                        pointBackgroundColor: 'rgba(133, 220, 187, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(133, 220, 187, 1)'
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { display: false },
+                            suggestedMin: 0,
+                            suggestedMax: 5,
+                            pointLabels: { font: { size: 12 } },
+                            ticks: { display: false }
+                        }
+                    },
+                    plugins: {
+                        title: { display: true, text: 'Comparative Risk & Reward Profile', font: { size: 16 } }
+                    }
+                }
+            });
+            
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('main section');
+
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.5
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+
+        });
+    </script>
+</body>
+</html>
